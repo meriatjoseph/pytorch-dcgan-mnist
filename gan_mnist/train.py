@@ -15,7 +15,7 @@ def train_model(no_of_epochs,disc,gen,optimD,optimG,dataloaders,loss_fn,input_si
 
     # setting the device as cuda or cpu
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-    reall = 1  # real label
+    reall = 0.9  # one-sided label smoothing: keeps D from getting overconfident on real images, which was starving G of gradient
     fakel = 0  # fake label
     os.makedirs(sample_dir,exist_ok=True)
     os.makedirs(checkpoint_dir,exist_ok=True)
@@ -33,6 +33,8 @@ def train_model(no_of_epochs,disc,gen,optimD,optimG,dataloaders,loss_fn,input_si
                 #converting labels into torch with proper size as per the batch size
                 real_label = torch.full((batch_size,),reall,dtype=inputs.dtype,device=device)
                 fake_label = torch.full((batch_size,),fakel,dtype=inputs.dtype,device=device)
+                # G's target stays fully real (1.0, unsmoothed) so it gets a strong gradient even though D is trained against a smoothed 0.9
+                gen_target_label = torch.full((batch_size,),1.0,dtype=inputs.dtype,device=device)
 
                 optimD.zero_grad()
                 #output from discriminator
@@ -63,7 +65,7 @@ def train_model(no_of_epochs,disc,gen,optimD,optimG,dataloaders,loss_fn,input_si
                 #passing fake image obtained from generator to discriminator
                 output = disc(fake)
                 #getting generator loss by giving fake image as input but giving real label
-                Gen_loss = loss_fn(output,real_label)
+                Gen_loss = loss_fn(output,gen_target_label)
                 running_loss_G = running_loss_G + Gen_loss
                 #backpropogation
                 Gen_loss.backward()

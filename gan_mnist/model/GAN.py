@@ -32,10 +32,12 @@ class Discriminator(nn.Module):
         self.net = nn.Sequential(
             nn.Conv2d(1,64,4,2,1,bias=False),
             nn.LeakyReLU(0.2,inplace=True),
+            nn.Dropout2d(0.4),
             # 64 x 14 x 14
             nn.Conv2d(64,128,4,2,1,bias=False),
             nn.BatchNorm2d(128),
             nn.LeakyReLU(0.2,inplace=True),
+            nn.Dropout2d(0.4),
             # 128 x 7 x 7
             nn.Conv2d(128,1,7,1,0,bias=False),
             nn.Sigmoid(),
